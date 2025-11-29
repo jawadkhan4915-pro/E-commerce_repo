@@ -118,20 +118,29 @@ export const updateProfile = async (req, res) => {
 
             // Handle Avatar Upload
             if (req.file) {
-                try {
-                    const result = await cloudinary.uploader.upload(req.file.path, {
-                        folder: 'avatars',
-                        width: 150,
-                        crop: 'scale',
-                    });
+                if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+                    try {
+                        const result = await cloudinary.uploader.upload(req.file.path, {
+                            folder: 'avatars',
+                            width: 150,
+                            crop: 'scale',
+                        });
 
-                    user.avatar = result.secure_url;
+                        user.avatar = result.secure_url;
 
-                    // Remove file from local uploads folder
-                    fs.unlinkSync(req.file.path);
-                } catch (uploadError) {
-                    console.error('Cloudinary Upload Error:', uploadError);
-                    return res.status(500).json({ message: 'Image upload failed' });
+                        // Remove file from local uploads folder
+                        fs.unlinkSync(req.file.path);
+                    } catch (uploadError) {
+                        console.error('Cloudinary Upload Error:', uploadError);
+                        return res.status(500).json({ message: 'Image upload failed' });
+                    }
+                } else {
+                    // Fallback to local storage
+                    const protocol = req.protocol;
+                    const host = req.get('host');
+                    // Construct URL: http://localhost:5000/uploads/filename.jpg
+                    user.avatar = `${protocol}://${host}/uploads/${req.file.filename}`;
+                    // File is already in 'uploads/' via multer, so we keep it there.
                 }
             } else if (req.body.avatar) {
                 // Allow updating avatar via URL string if provided
