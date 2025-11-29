@@ -7,6 +7,7 @@ import {
     toggleWishlist,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
+import upload from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ router.post('/login', login);
 
 // Protected routes
 router.get('/profile', protect, getProfile);
-router.put('/profile', protect, updateProfile);
+router.put('/profile', protect, upload.single('avatar'), updateProfile);
 router.post('/wishlist', protect, toggleWishlist);
 
 export default router;

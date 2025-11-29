@@ -1,5 +1,7 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
+import cloudinary from '../utils/cloudinary.js';
+import fs from 'fs';
 
 /**
  * @desc    Register a new user
@@ -109,10 +111,31 @@ export const updateProfile = async (req, res) => {
         if (user) {
             user.name = req.body.name || user.name;
             user.email = req.body.email || user.email;
-            user.avatar = req.body.avatar || user.avatar;
 
             if (req.body.password) {
                 user.password = req.body.password;
+            }
+
+            // Handle Avatar Upload
+            if (req.file) {
+                try {
+                    const result = await cloudinary.uploader.upload(req.file.path, {
+                        folder: 'avatars',
+                        width: 150,
+                        crop: 'scale',
+                    });
+
+                    user.avatar = result.secure_url;
+
+                    // Remove file from local uploads folder
+                    fs.unlinkSync(req.file.path);
+                } catch (uploadError) {
+                    console.error('Cloudinary Upload Error:', uploadError);
+                    return res.status(500).json({ message: 'Image upload failed' });
+                }
+            } else if (req.body.avatar) {
+                // Allow updating avatar via URL string if provided
+                user.avatar = req.body.avatar;
             }
 
             const updatedUser = await user.save();
