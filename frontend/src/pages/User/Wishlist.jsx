@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/api';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaHeart, FaTrash, FaShoppingCart } from 'react-icons/fa';
+import { formatPrice } from '../../utils/helpers';
+import toast from 'react-hot-toast';
 
 const Wishlist = () => {
     const [wishlist, setWishlist] = useState([]);
@@ -12,7 +16,6 @@ const Wishlist = () => {
 
     const fetchWishlist = async () => {
         try {
-            // Need to fetch user profile populated with wishlist
             const { data } = await api.get('/users/profile');
             setWishlist(data.wishlist || []);
         } catch (error) {
@@ -23,15 +26,13 @@ const Wishlist = () => {
     };
 
     const removeFromWishlist = async (productId) => {
-        // Implement logic to remove from wishlist locally or refetch
-        // Since ProductCard might handle the toggle, we might just need to refresh
         try {
             const { data } = await api.post('/users/wishlist', { productId });
-            // API returns updated wishlist IDs, but we need full product objects.
-            // So we might need to filter the current list.
             setWishlist(wishlist.filter(p => p._id !== productId));
+            toast.success('Removed from wishlist');
         } catch (error) {
             console.error(error);
+            toast.error('Failed to remove item');
         }
     };
 
@@ -41,44 +42,84 @@ const Wishlist = () => {
 
     if (wishlist.length === 0) {
         return (
-            <div className="text-center py-12">
-                <p className="text-gray-400 text-lg mb-4">Your wishlist is empty.</p>
-                <Link to="/products" className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700">Explore Products</Link>
-            </div>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-20 bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10"
+            >
+                <div className="bg-gray-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 text-gray-500">
+                    <FaHeart size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">Your wishlist is empty</h3>
+                <p className="text-gray-400 mb-8">Save items you love here for later.</p>
+                <Link
+                    to="/products"
+                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all transform hover:-translate-y-1"
+                >
+                    Explore Products
+                </Link>
+            </motion.div>
         );
     }
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold text-white mb-6">My Wishlist</h2>
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+        >
+            <h2 className="text-3xl font-bold text-white mb-8">My Wishlist <span className="text-lg text-gray-500 font-normal ml-2">({wishlist.length} items)</span></h2>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {wishlist.map((product) => (
-                    // We can reuse ProductCard, but we need to ensure it handles the "wished" state correctly
-                    // Or we can just render a simple card here.
-                    // Let's assume ProductCard is smart enough or we pass props.
-                    // For now, let's just make a simple card to be safe and fast.
-                    <div key={product._id} className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden group">
-                        <div className="relative h-48 overflow-hidden">
-                            <img src={product.images?.[0]?.url || 'https://via.placeholder.com/300'} alt={product.name} className="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" />
-                            <button
-                                onClick={(e) => { e.preventDefault(); removeFromWishlist(product._id); }}
-                                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="p-4">
-                            <Link to={`/product/${product._id}`}>
-                                <h3 className="text-white font-semibold mb-2 hover:text-purple-400 truncate">{product.name}</h3>
-                            </Link>
-                            <p className="text-purple-400 font-bold">${product.price}</p>
-                        </div>
-                    </div>
-                ))}
+                <AnimatePresence>
+                    {wishlist.map((product) => (
+                        <motion.div
+                            key={product._id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                            className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden group hover:border-purple-500/50 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl"
+                        >
+                            <div className="relative h-64 overflow-hidden">
+                                <img
+                                    src={product.images?.[0]?.url || 'https://via.placeholder.com/300'}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+                                    <Link
+                                        to={`/products/${product._id}`}
+                                        className="bg-white text-gray-900 px-6 py-2 rounded-full font-bold transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
+                                    >
+                                        View Details
+                                    </Link>
+                                </div>
+                                <button
+                                    onClick={(e) => { e.preventDefault(); removeFromWishlist(product._id); }}
+                                    className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white p-2.5 rounded-full hover:bg-red-500 transition-colors duration-300"
+                                    title="Remove from Wishlist"
+                                >
+                                    <FaTrash size={14} />
+                                </button>
+                            </div>
+
+                            <div className="p-5">
+                                <Link to={`/products/${product._id}`}>
+                                    <h3 className="text-white font-semibold text-lg mb-2 hover:text-purple-400 truncate transition-colors">{product.name}</h3>
+                                </Link>
+                                <div className="flex items-center justify-between mt-4">
+                                    <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                                        {formatPrice(product.price)}
+                                    </span>
+                                    {/* Optional: Add to cart button if available */}
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

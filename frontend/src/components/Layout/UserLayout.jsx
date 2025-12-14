@@ -25,34 +25,58 @@ const UserLayout = () => {
 
     return (
         <div className="container py-12">
-            <h1 className="text-3xl font-bold mb-8 text-white">My Account</h1>
+            <motion.h1
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-4xl font-extrabold mb-8 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent"
+            >
+                My Account
+            </motion.h1>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 {/* Sidebar */}
                 <div className="md:col-span-1">
-                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 sticky top-24">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="bg-gray-900/50 backdrop-blur-md rounded-2xl p-4 border border-white/10 sticky top-24 shadow-xl"
+                    >
                         <nav className="flex flex-col space-y-2">
-                            {menuItems.map((item) => (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    className={`flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${location.pathname === item.path || (item.path === '/profile' && location.pathname === '/profile/')
-                                            ? 'bg-purple-600 text-white'
-                                            : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                                        }`}
-                                >
-                                    <span>{item.icon}</span>
-                                    <span>{item.name}</span>
-                                </Link>
-                            ))}
+                            {menuItems.map((item) => {
+                                const isActive = location.pathname === item.path || (item.path === '/profile' && location.pathname === '/profile/');
+                                return (
+                                    <Link
+                                        key={item.path}
+                                        to={item.path}
+                                        className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden group ${isActive
+                                                ? 'text-white shadow-lg'
+                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                            }`}
+                                    >
+                                        {isActive && (
+                                            <motion.div
+                                                layoutId="activeTab"
+                                                className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl"
+                                                initial={false}
+                                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                            />
+                                        )}
+                                        <span className="relative z-10 text-lg group-hover:scale-110 transition-transform duration-300">{item.icon}</span>
+                                        <span className="relative z-10 font-medium">{item.name}</span>
+                                    </Link>
+                                );
+                            })}
+
+                            <div className="my-4 border-t border-white/10"></div>
+
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center space-x-3 px-4 py-3 rounded-md text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors w-full text-left mt-4 border-t border-gray-700 pt-4"
+                                className="flex items-center space-x-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-300 w-full text-left group"
                             >
-                                <FaSignOutAlt />
-                                <span>Logout</span>
+                                <span className="text-lg group-hover:scale-110 transition-transform duration-300"><FaSignOutAlt /></span>
+                                <span className="font-medium">Logout</span>
                             </button>
                         </nav>
-                    </div>
+                    </motion.div>
                 </div>
 
                 {/* Main Content */}
@@ -60,9 +84,10 @@ const UserLayout = () => {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="bg-gray-800 rounded-lg p-6 border border-gray-700 min-h-[500px]"
+                        transition={{ duration: 0.4, delay: 0.1 }}
+                        className="bg-gray-900/50 backdrop-blur-md rounded-2xl p-8 border border-white/10 min-h-[600px] shadow-2xl relative overflow-hidden"
                     >
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 opacity-50"></div>
                         <Outlet />
                     </motion.div>
                 </div>
