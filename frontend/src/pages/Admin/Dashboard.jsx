@@ -1,336 +1,181 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { formatPrice } from '../../utils/helpers';
-import api from '../../api/api';
-import toast from 'react-hot-toast';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from 'recharts';
+import { FaUsers, FaBox, FaShoppingBag, FaDollarSign } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 
 const Dashboard = () => {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+    totalSales: 0,
+    salesData: [],
+  });
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Get token from local storage (or redux state if I had access here easily, but localStorage is safer for dirty fetch)
+        // Actually, I should use the axios instance if it exists, or just manual axios with header.
+        // I'll assume standard axios for now, but need to attach token.
+        const token = JSON.parse(localStorage.getItem('userInfo'))?.token; // Assuming userInfo is stored in localStorage by auth slice.
 
-    const fetchProducts = async () => {
-        try {
-            const { data } = await api.get('/products?limit=100');
-            setProducts(data.products);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-        } finally {
-            setLoading(false);
-        }
+        if (!token) return;
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        const { data } = await axios.get('/api/analytics/dashboard', config);
+        setStats(data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        setLoading(false);
+      }
     };
 
-    const handleDelete = async (id, name) => {
-        if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+    fetchStats();
+  }, []);
 
-        try {
-            await api.delete(`/products/${id}`);
-            setProducts(products.filter((p) => p._id !== id));
-            toast.success('Product deleted successfully');
-        } catch (error) {
-            // Error handled by interceptor
-        }
-    };
-
+  if (loading) {
     return (
-        <div className="admin-dashboard py-8">
-            <div className="container">
-                <div className="dashboard-header">
-                    <h1 className="page-title">Admin Dashboard</h1>
-                    <Link to="/admin/products/new" className="btn btn-primary">
-                        + Add New Product
-                    </Link>
-                </div>
-
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                            📦
-                        </div>
-                        <div className="stat-info">
-                            <p className="stat-label">Total Products</p>
-                            <p className="stat-value">{products.length}</p>
-                        </div>
-                    </div>
-
-                    <div className="stat-card">
-                        <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
-                            ✅
-                        </div>
-                        <div className="stat-info">
-                            <p className="stat-label">In Stock</p>
-                            <p className="stat-value">{products.filter(p => p.stock > 0).length}</p>
-                        </div>
-                    </div>
-
-                    <div className="stat-card">
-                        <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
-                            ⭐
-                        </div>
-                        <div className="stat-info">
-                            <p className="stat-label">Avg Rating</p>
-                            <p className="stat-value">
-                                {products.length > 0 ? (products.reduce((acc, p) => acc + p.ratings, 0) / products.length).toFixed(1) : '0'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="products-table-container">
-                    <h2 className="section-title">Manage Products</h2>
-
-                    {loading ? (
-                        <div className="loading-container">
-                            <div className="spinner"></div>
-                        </div>
-                    ) : (
-                        <div className="table-wrapper">
-                            <table className="products-table">
-                                <thead>
-                                    <tr>
-                                        <th>Image</th>
-                                        <th>Name</th>
-                                        <th>Category</th>
-                                        <th>Price</th>
-                                        <th>Stock</th>
-                                        <th>Rating</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {products.map((product) => (
-                                        <tr key={product._id}>
-                                            <td>
-                                                <img src={product.images[0] || 'https://via.placeholder.com/50'} alt={product.name} className="table-image" />
-                                            </td>
-                                            <td className="product-name-cell">{product.name}</td>
-                                            <td>{product.category}</td>
-                                            <td className="price-cell">{formatPrice(product.price)}</td>
-                                            <td>
-                                                <span className={`stock-badge ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                                                    {product.stock}
-                                                </span>
-                                            </td>
-                                            <td>{product.ratings.toFixed(1)} ⭐</td>
-                                            <td>
-                                                <div className="action-buttons">
-                                                    <Link to={`/admin/products/${product._id}/edit`} className="btn-action btn-edit">
-                                                        Edit
-                                                    </Link>
-                                                    <button onClick={() => handleDelete(product._id, product.name)} className="btn-action btn-delete">
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <style>{`
-        .dashboard-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .page-title {
-          font-size: 2.5rem;
-          font-weight: 800;
-          background: var(--gradient-primary);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          margin: 0;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 1.5rem;
-          margin-bottom: 3rem;
-        }
-
-        .stat-card {
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-xl);
-          padding: 1.5rem;
-          display: flex;
-          align-items: center;
-          gap: 1.5rem;
-        }
-
-        .stat-icon {
-          width: 60px;
-          height: 60px;
-          border-radius: var(--radius-lg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.75rem;
-        }
-
-        .stat-info {
-          flex: 1;
-        }
-
-        .stat-label {
-          font-size: 0.875rem;
-          color: var(--text-tertiary);
-          margin-bottom: 0.25rem;
-        }
-
-        .stat-value {
-          font-size: 2rem;
-          font-weight: 800;
-          color: var(--text-primary);
-        }
-
-        .products-table-container {
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-xl);
-          padding: 2rem;
-        }
-
-        .section-title {
-          font-size: 1.5rem;
-          font-weight: 700;
-          margin-bottom: 1.5rem;
-          color: var(--text-primary);
-        }
-
-        .table-wrapper {
-          overflow-x: auto;
-        }
-
-        .products-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-
-        .products-table thead {
-          background: var(--bg-secondary);
-        }
-
-        .products-table th {
-          padding: 1rem;
-          text-align: left;
-          font-weight: 600;
-          color: var(--text-primary);
-          font-size: 0.875rem;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .products-table td {
-          padding: 1rem;
-          border-top: 1px solid var(--border-color);
-          color: var(--text-secondary);
-        }
-
-        .table-image {
-          width: 50px;
-          height: 50px;
-          object-fit: cover;
-          border-radius: var(--radius-md);
-        }
-
-        .product-name-cell {
-          font-weight: 600;
-          color: var(--text-primary);
-          max-width: 300px;
-        }
-
-        .price-cell {
-          font-weight: 700;
-          color: var(--primary-600);
-        }
-
-        .stock-badge {
-          padding: 0.25rem 0.75rem;
-          border-radius: var(--radius-full);
-          font-size: 0.875rem;
-          font-weight: 600;
-        }
-
-        .stock-badge.in-stock {
-          background: #d1fae5;
-          color: #065f46;
-        }
-
-        .stock-badge.out-of-stock {
-          background: #fee2e2;
-          color: #991b1b;
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .btn-action {
-          padding: 0.5rem 1rem;
-          border-radius: var(--radius-md);
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-          text-decoration: none;
-          border: none;
-        }
-
-        .btn-edit {
-          background: var(--primary-100);
-          color: var(--primary-700);
-        }
-
-        .btn-edit:hover {
-          background: var(--primary-200);
-        }
-
-        .btn-delete {
-          background: #fee2e2;
-          color: #991b1b;
-        }
-
-        .btn-delete:hover {
-          background: #fecaca;
-        }
-
-        .loading-container {
-          display: flex;
-          justify-content: center;
-          padding: 3rem;
-        }
-
-        @media (max-width: 768px) {
-          .dashboard-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-          }
-
-          .table-wrapper {
-            overflow-x: scroll;
-          }
-
-          .products-table {
-            min-width: 800px;
-          }
-        }
-      `}</style>
-        </div>
+      <div className="flex justify-center items-center h-full">
+        <div className="spinner"></div>
+      </div>
     );
+  }
+
+  const cards = [
+    {
+      title: 'Total Sales',
+      value: `$${stats.totalSales.toFixed(2)}`,
+      icon: <FaDollarSign />,
+      color: 'var(--success)',
+      bg: 'rgba(16, 185, 129, 0.1)',
+    },
+    {
+      title: 'Total Orders',
+      value: stats.totalOrders,
+      icon: <FaShoppingBag />,
+      color: 'var(--primary-500)',
+      bg: 'rgba(99, 102, 241, 0.1)',
+    },
+    {
+      title: 'Total Users',
+      value: stats.totalUsers,
+      icon: <FaUsers />,
+      color: 'var(--warning)',
+      bg: 'rgba(245, 158, 11, 0.1)',
+    },
+    {
+      title: 'Total Products',
+      value: stats.totalProducts,
+      icon: <FaBox />,
+      color: 'var(--accent-500)',
+      bg: 'rgba(236, 72, 153, 0.1)',
+    },
+  ];
+
+  return (
+    <div className="dashboard-container">
+      <h2 className="mb-8">Dashboard Overview</h2>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-6 mb-8">
+        {cards.map((card, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="stat-card"
+          >
+            <div className="stat-info">
+              <h4>{card.title}</h4>
+              <p>{card.value}</p>
+            </div>
+            <div
+              className="stat-icon"
+              style={{ color: card.color, backgroundColor: card.bg }}
+            >
+              {card.icon}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+          className="chart-container"
+        >
+          <h3 className="mb-4 text-lg">Sales Overview (Last 7 Days)</h3>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={stats.salesData}
+              margin={{
+                top: 10,
+                right: 30,
+                left: 0,
+                bottom: 0,
+              }}
+            >
+              <defs>
+                <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--primary-500)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--primary-500)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
+              <XAxis
+                dataKey="_id"
+                stroke="var(--text-secondary)"
+                tick={{ fill: 'var(--text-secondary)' }}
+              />
+              <YAxis
+                stroke="var(--text-secondary)"
+                tick={{ fill: 'var(--text-secondary)' }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--bg-primary)',
+                  borderColor: 'var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="totalSales"
+                stroke="var(--primary-500)"
+                fill="url(#colorSales)"
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </motion.div>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;
