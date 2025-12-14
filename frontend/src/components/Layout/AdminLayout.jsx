@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+
 import {
     FaHome,
     FaBox,
@@ -10,18 +11,9 @@ import {
     FaCog,
     FaSignOutAlt,
     FaBars,
-import {
-        FaHome,
-        FaBox,
-        FaShoppingBag,
-        FaUsers,
-        FaChartBar,
-        FaCog,
-        FaSignOutAlt,
-        FaBars,
-        FaTimes,
-        FaUser,
-    } from 'react-icons/fa';
+    FaTimes,
+    FaUser,
+} from 'react-icons/fa';
 import '../../styles/admin.css';
 
 const AdminLayout = () => {

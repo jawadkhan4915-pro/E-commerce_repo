@@ -13,7 +13,12 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Profile from './pages/Profile';
+// import Profile from './pages/Profile'; // Replaced by User Dashboard
+import UserLayout from './components/Layout/UserLayout';
+import UserDashboard from './pages/User/Dashboard';
+import UserOrders from './pages/User/Orders';
+import AddressBook from './pages/User/AddressBook';
+import Wishlist from './pages/User/Wishlist';
 
 // Admin Pages
 import Dashboard from './pages/Admin/Dashboard';
@@ -92,10 +97,15 @@ function App() {
                                         path="/profile"
                                         element={
                                             <ProtectedRoute>
-                                                <Profile />
+                                                <UserLayout />
                                             </ProtectedRoute>
                                         }
-                                    />
+                                    >
+                                        <Route index element={<UserDashboard />} />
+                                        <Route path="orders" element={<UserOrders />} />
+                                        <Route path="address" element={<AddressBook />} />
+                                        <Route path="wishlist" element={<Wishlist />} />
+                                    </Route>
                                 </Routes>
                             </main>
                             <Footer />
