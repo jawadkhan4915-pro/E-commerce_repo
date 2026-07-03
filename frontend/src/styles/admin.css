@@ -30,6 +30,7 @@
 .sidebar-header h2 {
     font-size: var(--font-size-xl);
     background: var(--gradient-primary);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0;
