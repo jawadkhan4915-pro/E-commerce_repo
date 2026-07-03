@@ -1,24 +1,107 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    FiSearch, 
+    FiShoppingBag, 
+    FiUser, 
+    FiSun, 
+    FiMoon, 
+    FiMenu, 
+    FiX, 
+    FiLogOut, 
+    FiGrid, 
+    FiHeart, 
+    FiChevronRight,
+    FiAward
+} from 'react-icons/fi';
 import { logout } from '../../store/slices/authSlice';
+import api from '../../api/api';
 import toast from 'react-hot-toast';
 
 const Header = ({ darkMode, toggleDarkMode }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const dispatch = useDispatch();
     const { isAuthenticated, userInfo } = useSelector((state) => state.auth);
     const { totalItems } = useSelector((state) => state.cart);
+
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
 
-    const handleSearch = (e) => {
+    const searchRef = useRef(null);
+    const userMenuRef = useRef(null);
+
+    // Scroll listener for glassmorphism elevation
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 10) {
+                setScrolled(true);
+            } else {
+                setScrolled(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Close dropdowns on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (searchRef.current && !searchRef.current.contains(e.target)) {
+                setShowSuggestions(false);
+            }
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+                setShowUserMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Live search query autocomplete preview
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const { data } = await api.get(`/products?search=${encodeURIComponent(searchQuery)}&limit=5`);
+                setSearchResults(data.products || []);
+                setShowSuggestions(true);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            navigate(`/products?search=${searchQuery}`);
-            setSearchQuery('');
+            navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+            setShowSuggestions(false);
         }
+    };
+
+    const handleSelectProduct = (productId) => {
+        setShowSuggestions(false);
+        setSearchQuery('');
+        navigate(`/products/${productId}`);
     };
 
     const handleLogout = () => {
@@ -29,195 +112,275 @@ const Header = ({ darkMode, toggleDarkMode }) => {
     };
 
     return (
-        <header className="header">
+        <header className={`header ${scrolled ? 'header-scrolled' : ''}`}>
             <div className="container">
                 <div className="header-content">
-                    {/* Logo */}
+                    {/* Brand Logo */}
                     <Link to="/" className="logo">
-                        <svg
-                            width="32"
-                            height="32"
-                            viewBox="0 0 32 32"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
+                        <motion.div 
+                            className="logo-icon"
+                            whileHover={{ rotate: 12, scale: 1.05 }}
                         >
-                            <rect width="32" height="32" rx="8" fill="url(#gradient)" />
-                            <path
-                                d="M16 8L20 12H12L16 8Z"
-                                fill="white"
-                            />
-                            <rect x="10" y="14" width="12" height="10" rx="2" fill="white" />
-                            <defs>
-                                <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
-                                    <stop stopColor="#667eea" />
-                                    <stop offset="1" stopColor="#764ba2" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
+                            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+                                <rect width="32" height="32" rx="8" fill="url(#logoGrad)" />
+                                <path d="M16 7L21 12H11L16 7Z" fill="white" />
+                                <rect x="9" y="14" width="14" height="11" rx="3" fill="white" />
+                                <defs>
+                                    <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32">
+                                        <stop stopColor="#6366f1" />
+                                        <stop offset="1" stopColor="#ec4899" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </motion.div>
                         <span className="logo-text">ShopHub</span>
                     </Link>
 
-                    {/* Search Bar */}
-                    <form onSubmit={handleSearch} className="search-form">
-                        <input
-                            type="text"
-                            placeholder="Search products..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="search-input"
-                        />
-                        <button type="submit" className="search-btn">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                                width="20"
-                                height="20"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                                />
-                            </svg>
-                        </button>
-                    </form>
+                    {/* Live Search Form */}
+                    <div className="search-wrapper" ref={searchRef}>
+                        <form onSubmit={handleSearchSubmit} className="search-form">
+                            <FiSearch className="search-input-icon" />
+                            <input
+                                type="text"
+                                placeholder="Search products, brands, categories..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                                className="search-input"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="search-clear-btn"
+                                >
+                                    <FiX size={16} />
+                                </button>
+                            )}
+                        </form>
+
+                        {/* Instant Suggestions Dropdown */}
+                        <AnimatePresence>
+                            {showSuggestions && (
+                                <motion.div
+                                    className="search-suggestions-dropdown"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    transition={{ duration: 0.15 }}
+                                >
+                                    {isSearching ? (
+                                        <div className="suggestions-loading">
+                                            <div className="btn-spinner"></div> Searching...
+                                        </div>
+                                    ) : searchResults.length > 0 ? (
+                                        <div className="suggestions-list">
+                                            <div className="suggestions-header">Products ({searchResults.length})</div>
+                                            {searchResults.map((product) => (
+                                                <div
+                                                    key={product._id}
+                                                    onClick={() => handleSelectProduct(product._id)}
+                                                    className="suggestion-item"
+                                                >
+                                                    <img
+                                                        src={product.images?.[0] || 'https://via.placeholder.com/40'}
+                                                        alt={product.name}
+                                                        className="suggestion-thumb"
+                                                    />
+                                                    <div className="suggestion-details">
+                                                        <div className="suggestion-title">{product.name}</div>
+                                                        <div className="suggestion-price">${product.price}</div>
+                                                    </div>
+                                                    <FiChevronRight className="suggestion-arrow" />
+                                                </div>
+                                            ))}
+                                            <button
+                                                type="button"
+                                                onClick={handleSearchSubmit}
+                                                className="view-all-results-btn"
+                                            >
+                                                View all results for "{searchQuery}"
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="suggestions-empty">
+                                            No products found for "{searchQuery}"
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
                     {/* Desktop Navigation */}
                     <nav className="nav-desktop">
-                        <Link to="/products" className="nav-link">Products</Link>
-
-                        {/* Dark Mode Toggle */}
-                        <button onClick={toggleDarkMode} className="icon-btn" title="Toggle Dark Mode">
-                            {darkMode ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="22" height="22">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                                </svg>
-                            ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="22" height="22">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                                </svg>
-                            )}
-                        </button>
-
-                        {/* Cart */}
-                        <Link to="/cart" className="cart-btn">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                                width="24"
-                                height="24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"
-                                />
-                            </svg>
-                            {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
+                        <Link
+                            to="/products"
+                            className={`nav-link ${location.pathname === '/products' ? 'active' : ''}`}
+                        >
+                            <FiGrid /> Catalog
                         </Link>
 
-                        {/* User Menu */}
+                        {/* Dark Mode Switcher */}
+                        <motion.button
+                            onClick={toggleDarkMode}
+                            className="theme-toggle-btn"
+                            title="Toggle Light/Dark Theme"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                        >
+                            {darkMode ? <FiSun color="#f59e0b" size={20} /> : <FiMoon color="#6366f1" size={20} />}
+                        </motion.button>
+
+                        {/* Cart Link with Animated Badge */}
+                        <Link to="/cart" className="cart-link" title="Shopping Cart">
+                            <motion.div 
+                                className="cart-icon-wrapper"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <FiShoppingBag size={22} />
+                                {totalItems > 0 && (
+                                    <motion.span 
+                                        className="cart-badge"
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        key={totalItems}
+                                    >
+                                        {totalItems}
+                                    </motion.span>
+                                )}
+                            </motion.div>
+                        </Link>
+
+                        {/* User Profile Menu */}
                         {isAuthenticated ? (
-                            <div className="user-menu">
+                            <div className="user-menu-wrapper" ref={userMenuRef}>
                                 <button
                                     onClick={() => setShowUserMenu(!showUserMenu)}
-                                    className="user-btn"
+                                    className="user-avatar-btn"
                                 >
                                     <img
                                         src={userInfo?.avatar || 'https://via.placeholder.com/40'}
                                         alt={userInfo?.name}
-                                        className="user-avatar"
+                                        className="user-avatar-img"
                                     />
                                 </button>
 
-                                {showUserMenu && (
-                                    <div className="user-dropdown">
-                                        <div className="user-info">
-                                            <p className="user-name">{userInfo?.name}</p>
-                                            <p className="user-email">{userInfo?.email}</p>
-                                        </div>
-                                        <div className="dropdown-divider"></div>
-                                        <Link to="/profile" className="dropdown-item" onClick={() => setShowUserMenu(false)}>
-                                            Profile
-                                        </Link>
-                                        {userInfo?.role === 'admin' && (
-                                            <Link to="/admin/dashboard" className="dropdown-item" onClick={() => setShowUserMenu(false)}>
-                                                Admin Dashboard
+                                <AnimatePresence>
+                                    {showUserMenu && (
+                                        <motion.div
+                                            className="user-dropdown-card"
+                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            transition={{ duration: 0.15 }}
+                                        >
+                                            <div className="user-dropdown-header">
+                                                <p className="dropdown-user-name">{userInfo?.name}</p>
+                                                <p className="dropdown-user-email">{userInfo?.email}</p>
+                                                <span className="user-role-badge">{userInfo?.role || 'Customer'}</span>
+                                            </div>
+                                            <div className="dropdown-divider" />
+                                            <Link
+                                                to="/profile"
+                                                className="dropdown-link-item"
+                                                onClick={() => setShowUserMenu(false)}
+                                            >
+                                                <FiUser /> Profile & Account
                                             </Link>
-                                        )}
-                                        <div className="dropdown-divider"></div>
-                                        <button onClick={handleLogout} className="dropdown-item logout-btn">
-                                            Logout
-                                        </button>
-                                    </div>
-                                )}
+                                            <Link
+                                                to="/profile/wishlist"
+                                                className="dropdown-link-item"
+                                                onClick={() => setShowUserMenu(false)}
+                                            >
+                                                <FiHeart /> Wishlist
+                                            </Link>
+                                            {userInfo?.role === 'admin' && (
+                                                <Link
+                                                    to="/admin/dashboard"
+                                                    className="dropdown-link-item admin-link"
+                                                    onClick={() => setShowUserMenu(false)}
+                                                >
+                                                    <FiAward /> Admin Portal
+                                                </Link>
+                                            )}
+                                            <div className="dropdown-divider" />
+                                            <button onClick={handleLogout} className="dropdown-link-item logout-link">
+                                                <FiLogOut /> Log Out
+                                            </button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         ) : (
-                            <Link to="/login" className="btn btn-primary btn-sm">
-                                Login
+                            <Link to="/login" className="btn btn-primary btn-sm flex items-center gap-1">
+                                <FiUser /> Sign In
                             </Link>
                         )}
                     </nav>
 
-                    {/* Mobile Menu Button */}
+                    {/* Mobile Hamburger Toggle */}
                     <button
-                        className="mobile-menu-btn"
+                        className="mobile-toggle-btn"
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                            width="24"
-                            height="24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                            />
-                        </svg>
+                        {mobileMenuOpen ? <FiX size={26} /> : <FiMenu size={26} />}
                     </button>
                 </div>
 
-                {/* Mobile Menu */}
-                {mobileMenuOpen && (
-                    <div className="mobile-menu">
-                        <Link to="/products" className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
-                            Products
-                        </Link>
-                        <Link to="/cart" className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
-                            Cart {totalItems > 0 && `(${totalItems})`}
-                        </Link>
-                        {isAuthenticated ? (
-                            <>
-                                <Link to="/profile" className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
-                                    Profile
+                {/* Mobile Menu Drawer */}
+                <AnimatePresence>
+                    {mobileMenuOpen && (
+                        <motion.div
+                            className="mobile-menu-drawer"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                        >
+                            <div className="mobile-search-box">
+                                <form onSubmit={handleSearchSubmit} className="search-form">
+                                    <FiSearch className="search-input-icon" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search products..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="search-input"
+                                    />
+                                </form>
+                            </div>
+
+                            <div className="mobile-links">
+                                <Link to="/products" className="mobile-link" onClick={() => setMobileMenuOpen(false)}>
+                                    <FiGrid /> Catalog
                                 </Link>
-                                {userInfo?.role === 'admin' && (
-                                    <Link to="/admin/dashboard" className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
-                                        Admin Dashboard
+                                <Link to="/cart" className="mobile-link" onClick={() => setMobileMenuOpen(false)}>
+                                    <FiShoppingBag /> Cart ({totalItems})
+                                </Link>
+                                {isAuthenticated ? (
+                                    <>
+                                        <Link to="/profile" className="mobile-link" onClick={() => setMobileMenuOpen(false)}>
+                                            <FiUser /> Profile & Account
+                                        </Link>
+                                        {userInfo?.role === 'admin' && (
+                                            <Link to="/admin/dashboard" className="mobile-link admin-link" onClick={() => setMobileMenuOpen(false)}>
+                                                <FiAward /> Admin Dashboard
+                                            </Link>
+                                        )}
+                                        <button onClick={handleLogout} className="mobile-link logout-link">
+                                            <FiLogOut /> Log Out
+                                        </button>
+                                    </>
+                                ) : (
+                                    <Link to="/login" className="mobile-link active" onClick={() => setMobileMenuOpen(false)}>
+                                        <FiUser /> Sign In
                                     </Link>
                                 )}
-                                <button onClick={handleLogout} className="mobile-menu-item logout-btn">
-                                    Logout
-                                </button>
-                            </>
-                        ) : (
-                            <Link to="/login" className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
-                                Login
-                            </Link>
-                        )}
-                    </div>
-                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             <style>{`
@@ -225,183 +388,296 @@ const Header = ({ darkMode, toggleDarkMode }) => {
           position: sticky;
           top: 0;
           z-index: 1000;
-          background: var(--bg-primary);
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(16px);
           border-bottom: 1px solid var(--border-color);
-          box-shadow: var(--shadow-sm);
-          backdrop-filter: blur(10px);
+          transition: all var(--transition-base);
+        }
+
+        [data-theme='dark'] .header {
+          background: rgba(15, 23, 42, 0.85);
+        }
+
+        .header-scrolled {
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
         }
 
         .header-content {
           display: flex;
           align-items: center;
-          gap: 2rem;
-          padding: 1rem 0;
+          justify-content: space-between;
+          gap: 1.5rem;
+          height: 72px;
         }
 
         .logo {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          font-size: 1.5rem;
-          font-weight: 800;
-          color: var(--text-primary);
+          gap: 0.6rem;
           text-decoration: none;
         }
 
         .logo-text {
+          font-size: 1.4rem;
+          font-weight: 900;
           background: var(--gradient-primary);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          background-clip: text;
+          letter-spacing: -0.5px;
+        }
+
+        .search-wrapper {
+          flex: 1;
+          max-width: 480px;
+          position: relative;
         }
 
         .search-form {
-          flex: 1;
-          max-width: 500px;
           position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .search-input-icon {
+          position: absolute;
+          left: 1rem;
+          color: var(--text-tertiary);
+          pointer-events: none;
         }
 
         .search-input {
           width: 100%;
-          padding: 0.75rem 3rem 0.75rem 1rem;
+          padding: 0.65rem 2.5rem 0.65rem 2.6rem;
           border: 1px solid var(--border-color);
           border-radius: var(--radius-full);
           background: var(--bg-secondary);
           color: var(--text-primary);
-          font-size: var(--font-size-sm);
+          font-size: 0.9rem;
           transition: all var(--transition-fast);
         }
 
         .search-input:focus {
           outline: none;
           border-color: var(--primary-500);
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+          box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+          background: var(--bg-primary);
         }
 
-        .search-btn {
+        .search-clear-btn {
           position: absolute;
-          right: 0.5rem;
-          top: 50%;
-          transform: translateY(-50%);
+          right: 0.75rem;
           background: none;
           border: none;
           color: var(--text-tertiary);
           cursor: pointer;
-          padding: 0.5rem;
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+
+        .search-suggestions-dropdown {
+          position: absolute;
+          top: calc(100% + 0.5rem);
+          left: 0;
+          right: 0;
+          background: var(--bg-primary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-xl);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+          overflow: hidden;
+          z-index: 100;
+          padding: 0.5rem;
+        }
+
+        .suggestions-header {
+          padding: 0.5rem 0.75rem;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: var(--text-tertiary);
+        }
+
+        .suggestion-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.6rem 0.75rem;
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: background var(--transition-fast);
+        }
+
+        .suggestion-item:hover {
+          background: var(--bg-secondary);
+        }
+
+        .suggestion-thumb {
+          width: 36px;
+          height: 36px;
+          border-radius: var(--radius-sm);
+          object-fit: cover;
+        }
+
+        .suggestion-details {
+          flex: 1;
+        }
+
+        .suggestion-title {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        .suggestion-price {
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: var(--primary-600);
+        }
+
+        .suggestion-arrow {
+          color: var(--text-tertiary);
+        }
+
+        .view-all-results-btn {
+          width: 100%;
+          padding: 0.6rem;
+          margin-top: 0.4rem;
+          background: var(--bg-secondary);
+          border: none;
+          border-radius: var(--radius-md);
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--primary-600);
+          cursor: pointer;
         }
 
         .nav-desktop {
           display: flex;
           align-items: center;
-          gap: 1.5rem;
+          gap: 1.25rem;
         }
 
         .nav-link {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
           color: var(--text-secondary);
-          font-weight: 500;
+          font-weight: 600;
+          font-size: 0.925rem;
+          text-decoration: none;
           transition: color var(--transition-fast);
+          padding: 0.4rem 0.6rem;
+          border-radius: var(--radius-md);
         }
 
-        .nav-link:hover {
+        .nav-link:hover,
+        .nav-link.active {
           color: var(--primary-600);
         }
 
-        .icon-btn {
-          background: none;
-          border: none;
-          color: var(--text-secondary);
+        .theme-toggle-btn {
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           cursor: pointer;
-          padding: 0.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: var(--radius-md);
-          transition: all var(--transition-fast);
         }
 
-        .icon-btn:hover {
-          background: var(--bg-secondary);
-          color: var(--primary-600);
+        .cart-link {
+          text-decoration: none;
         }
 
-        .cart-btn {
+        .cart-icon-wrapper {
           position: relative;
-          color: var(--text-secondary);
-          padding: 0.5rem;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: var(--radius-md);
-          transition: all var(--transition-fast);
-        }
-
-        .cart-btn:hover {
-          background: var(--bg-secondary);
-          color: var(--primary-600);
+          color: var(--text-primary);
         }
 
         .cart-badge {
           position: absolute;
-          top: 0;
-          right: 0;
+          top: -4px;
+          right: -4px;
           background: var(--gradient-accent);
           color: white;
           font-size: 0.7rem;
-          font-weight: 700;
-          padding: 0.15rem 0.4rem;
-          border-radius: var(--radius-full);
-          min-width: 18px;
-          text-align: center;
+          font-weight: 800;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 10px rgba(236, 72, 153, 0.4);
         }
 
-        .user-menu {
+        .user-menu-wrapper {
           position: relative;
         }
 
-        .user-btn {
+        .user-avatar-btn {
           background: none;
           border: none;
-          cursor: pointer;
           padding: 0;
+          cursor: pointer;
         }
 
-        .user-avatar {
+        .user-avatar-img {
           width: 40px;
           height: 40px;
-          border-radius: var(--radius-full);
+          border-radius: 50%;
           border: 2px solid var(--primary-500);
           object-fit: cover;
         }
 
-        .user-dropdown {
+        .user-dropdown-card {
           position: absolute;
           top: calc(100% + 0.5rem);
           right: 0;
+          width: 240px;
           background: var(--bg-primary);
           border: 1px solid var(--border-color);
-          border-radius: var(--radius-lg);
-          box-shadow: var(--shadow-xl);
-          min-width: 220px;
-          padding: 0.5rem;
-          animation: fadeIn 0.2s ease-out;
-        }
-
-        .user-info {
+          border-radius: var(--radius-xl);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.15);
           padding: 0.75rem;
+          z-index: 100;
         }
 
-        .user-name {
-          font-weight: 600;
+        .user-dropdown-header {
+          padding: 0.5rem;
+        }
+
+        .dropdown-user-name {
+          font-weight: 700;
           color: var(--text-primary);
-          margin-bottom: 0.25rem;
+          font-size: 0.95rem;
         }
 
-        .user-email {
-          font-size: var(--font-size-sm);
+        .dropdown-user-email {
+          font-size: 0.8rem;
           color: var(--text-tertiary);
+          margin-bottom: 0.4rem;
+        }
+
+        .user-role-badge {
+          display: inline-block;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          padding: 0.15rem 0.5rem;
+          background: var(--primary-100);
+          color: var(--primary-700);
+          border-radius: var(--radius-full);
         }
 
         .dropdown-divider {
@@ -410,82 +686,81 @@ const Header = ({ darkMode, toggleDarkMode }) => {
           margin: 0.5rem 0;
         }
 
-        .dropdown-item {
-          display: block;
+        .dropdown-link-item {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
           width: 100%;
-          padding: 0.75rem;
-          text-align: left;
-          background: none;
-          border: none;
+          padding: 0.6rem 0.75rem;
           border-radius: var(--radius-md);
           color: var(--text-secondary);
-          font-size: var(--font-size-sm);
+          font-size: 0.875rem;
+          font-weight: 600;
+          text-decoration: none;
+          background: none;
+          border: none;
           cursor: pointer;
-          transition: all var(--transition-fast);
+          transition: background var(--transition-fast);
         }
 
-        .dropdown-item:hover {
+        .dropdown-link-item:hover {
           background: var(--bg-secondary);
           color: var(--text-primary);
         }
 
-        .logout-btn {
+        .admin-link {
+          color: var(--accent-600);
+        }
+
+        .logout-link {
           color: var(--error);
         }
 
-        .mobile-menu-btn {
+        .mobile-toggle-btn {
           display: none;
           background: none;
           border: none;
           color: var(--text-primary);
           cursor: pointer;
-          padding: 0.5rem;
         }
 
-        .mobile-menu {
+        .mobile-menu-drawer {
           display: none;
-          flex-direction: column;
-          gap: 0.5rem;
           padding: 1rem 0;
           border-top: 1px solid var(--border-color);
+        }
+
+        .mobile-links {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
           margin-top: 1rem;
         }
 
-        .mobile-menu-item {
+        .mobile-link {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
           padding: 0.75rem;
-          color: var(--text-secondary);
-          text-decoration: none;
-          border-radius: var(--radius-md);
-          transition: all var(--transition-fast);
-          background: none;
-          border: none;
-          text-align: left;
-          font-size: var(--font-size-base);
-          cursor: pointer;
-          width: 100%;
-        }
-
-        .mobile-menu-item:hover {
-          background: var(--bg-secondary);
+          border-radius: var(--radius-lg);
           color: var(--text-primary);
+          text-decoration: none;
+          font-weight: 600;
+          background: var(--bg-secondary);
+          border: none;
+          width: 100%;
+          text-align: left;
+          cursor: pointer;
         }
 
         @media (max-width: 768px) {
-          .search-form {
-            display: none;
-          }
-
+          .search-wrapper,
           .nav-desktop {
             display: none;
           }
-
-          .mobile-menu-btn {
+          .mobile-toggle-btn,
+          .mobile-menu-drawer {
             display: block;
-            margin-left: auto;
-          }
-
-          .mobile-menu {
-            display: flex;
           }
         }
       `}</style>

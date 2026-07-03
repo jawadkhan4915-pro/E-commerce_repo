@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { motion } from 'framer-motion';
+import { 
+    FiShoppingCart, 
+    FiHeart, 
+    FiTruck, 
+    FiShield, 
+    FiRotateCcw, 
+    FiCheck, 
+    FiStar, 
+    FiArrowLeft,
+    FiUser
+} from 'react-icons/fi';
 import { addToCart } from '../store/slices/cartSlice';
 import Rating from '../components/Rating';
 import { formatPrice } from '../utils/helpers';
@@ -14,12 +26,14 @@ const ProductDetail = () => {
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
+    const [isWishlisted, setIsWishlisted] = useState(false);
 
     useEffect(() => {
         fetchProduct();
     }, [id]);
 
     const fetchProduct = async () => {
+        setLoading(true);
         try {
             const { data } = await api.get(`/products/${id}`);
             setProduct(data);
@@ -31,11 +45,20 @@ const ProductDetail = () => {
     };
 
     const handleAddToCart = () => {
-        if (product.stock > 0) {
+        if (product && product.stock > 0) {
             for (let i = 0; i < quantity; i++) {
                 dispatch(addToCart(product));
             }
-            toast.success(`Added ${quantity} item(s) to cart!`);
+            toast.success(`Added ${quantity} ${product.name} to cart!`);
+        }
+    };
+
+    const toggleWishlist = () => {
+        setIsWishlisted(!isWishlisted);
+        if (!isWishlisted) {
+            toast.success('Added to wishlist ❤️');
+        } else {
+            toast('Removed from wishlist');
         }
     };
 
@@ -48,95 +71,386 @@ const ProductDetail = () => {
     }
 
     if (!product) {
-        return <div className="container py-8"><p>Product not found</p></div>;
+        return (
+            <div className="container py-12 text-center">
+                <h2>Product Not Found</h2>
+                <Link to="/products" className="btn btn-primary mt-4">
+                    Back to Catalog
+                </Link>
+            </div>
+        );
     }
 
     return (
-        <div className="product-detail-page py-8">
+        <motion.div 
+            className="product-detail-page py-8"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+        >
             <div className="container">
+                {/* Back Link */}
+                <Link to="/products" className="back-link mb-6 inline-flex items-center gap-2">
+                    <FiArrowLeft /> Back to Catalog
+                </Link>
+
                 <div className="product-detail-grid">
                     {/* Image Gallery */}
-                    <div className="product-images">
-                        <div className="main-image">
-                            <img src={product.images[selectedImage] || 'https://via.placeholder.com/600'} alt={product.name} />
+                    <div className="product-images-col">
+                        <div className="main-image-frame">
+                            <img 
+                                src={product.images?.[selectedImage] || product.images?.[0] || 'https://via.placeholder.com/600'} 
+                                alt={product.name} 
+                                className="main-img"
+                            />
+                            {product.stock === 0 && (
+                                <span className="out-badge">Out of Stock</span>
+                            )}
                         </div>
-                        {product.images.length > 1 && (
-                            <div className="image-thumbnails">
-                                {product.images.map((img, index) => (
+
+                        {product.images && product.images.length > 1 && (
+                            <div className="image-thumbnails flex gap-3 mt-4">
+                                {product.images.map((img, idx) => (
                                     <button
-                                        key={index}
-                                        onClick={() => setSelectedImage(index)}
-                                        className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
+                                        key={idx}
+                                        onClick={() => setSelectedImage(idx)}
+                                        className={`thumb-btn ${selectedImage === idx ? 'active' : ''}`}
                                     >
-                                        <img src={img} alt={`${product.name} ${index + 1}`} />
+                                        <img src={img} alt="" />
                                     </button>
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    {/* Product Info */}
-                    <div className="product-info-section">
-                        <div className="product-category-badge">{product.category}</div>
-                        <h1 className="product-title">{product.name}</h1>
+                    {/* Information Section */}
+                    <div className="product-info-col">
+                        <div className="category-wishlist-row flex justify-between items-center mb-2">
+                            <span className="cat-badge">{product.category}</span>
+                            <motion.button 
+                                onClick={toggleWishlist}
+                                className={`wishlist-icon-btn ${isWishlisted ? 'active' : ''}`}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                title="Wishlist"
+                            >
+                                <FiHeart size={20} fill={isWishlisted ? '#ef4444' : 'none'} color={isWishlisted ? '#ef4444' : 'currentColor'} />
+                            </motion.button>
+                        </div>
 
-                        <div className="product-rating-section">
+                        <h1 className="detail-title">{product.name}</h1>
+
+                        <div className="rating-row mb-4">
                             <Rating value={product.ratings} numReviews={product.numReviews} />
                         </div>
 
-                        <div className="product-price-section">
-                            <span className="product-price">{formatPrice(product.price)}</span>
-                            <span className={`stock-badge ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                                {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                        <div className="price-stock-row flex items-center gap-4 mb-6">
+                            <span className="price-tag">{formatPrice(product.price)}</span>
+                            <span className={`stock-tag ${product.stock > 0 ? 'in-stock' : 'out-stock'}`}>
+                                {product.stock > 0 ? `${product.stock} Units In Stock` : 'Out of Stock'}
                             </span>
                         </div>
 
-                        <p className="product-description">{product.description}</p>
+                        <p className="description-text mb-6">{product.description}</p>
 
+                        {/* Quantity controls */}
                         {product.stock > 0 && (
-                            <div className="quantity-section">
-                                <label className="quantity-label">Quantity:</label>
-                                <div className="quantity-controls">
+                            <div className="quantity-wrapper flex items-center gap-4 mb-6">
+                                <label className="qty-label font-semibold">Select Quantity:</label>
+                                <div className="qty-picker">
                                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="qty-btn">-</button>
-                                    <span className="qty-value">{quantity}</span>
+                                    <span className="qty-val">{quantity}</span>
                                     <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="qty-btn">+</button>
                                 </div>
                             </div>
                         )}
 
-                        <button
-                            onClick={handleAddToCart}
-                            disabled={product.stock === 0}
-                            className="btn btn-primary btn-lg"
-                            style={{ width: '100%' }}
-                        >
-                            {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
-                        </button>
+                        <div className="action-buttons mb-8">
+                            <motion.button
+                                onClick={handleAddToCart}
+                                disabled={product.stock === 0}
+                                className="btn btn-primary btn-lg full-cta"
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <FiShoppingCart size={20} />
+                                {product.stock > 0 ? `Add ${quantity} to Shopping Cart` : 'Currently Out of Stock'}
+                            </motion.button>
+                        </div>
+
+                        {/* Guarantee Perks */}
+                        <div className="guarantee-cards-row grid grid-cols-3 gap-3">
+                            <div className="perk-box">
+                                <FiTruck className="perk-icon" />
+                                <div>
+                                    <span className="perk-title">Free Delivery</span>
+                                    <span className="perk-sub">Orders over $50</span>
+                                </div>
+                            </div>
+                            <div className="perk-box">
+                                <FiRotateCcw className="perk-icon" />
+                                <div>
+                                    <span className="perk-title">30 Days Return</span>
+                                    <span className="perk-sub">Hassle-free exchange</span>
+                                </div>
+                            </div>
+                            <div className="perk-box">
+                                <FiShield className="perk-icon" />
+                                <div>
+                                    <span className="perk-title">2-Year Warranty</span>
+                                    <span className="perk-sub">Official coverage</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Reviews Section */}
-                <div className="reviews-section">
-                    <h2 className="reviews-title">Customer Reviews</h2>
+                <div className="reviews-container mt-12 pt-8 border-t">
+                    <h2 className="reviews-heading mb-6">Verified Customer Reviews</h2>
+
                     {product.reviews && product.reviews.length > 0 ? (
-                        <div className="reviews-list">
-                            {product.reviews.map((review) => (
-                                <div key={review._id} className="review-card">
-                                    <div className="review-header">
-                                        <strong>{review.name}</strong>
-                                        <Rating value={review.rating} showReviews={false} />
+                        <div className="reviews-list grid gap-4">
+                            {product.reviews.map((rev) => (
+                                <div key={rev._id} className="review-item-card">
+                                    <div className="review-user-header flex justify-between items-center mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="user-avatar-circle">
+                                                <FiUser />
+                                            </div>
+                                            <strong className="user-name">{rev.name}</strong>
+                                        </div>
+                                        <Rating value={rev.rating} showReviews={false} />
                                     </div>
-                                    <p className="review-comment">{review.comment}</p>
+                                    <p className="review-text">{rev.comment}</p>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <p className="no-reviews">No reviews yet</p>
+                        <div className="no-reviews-box text-center py-8">
+                            <p>No reviews yet for this product. Be the first to leave a feedback!</p>
+                        </div>
                     )}
                 </div>
             </div>
 
             <style>{`
+        .back-link {
+          color: var(--text-secondary);
+          font-weight: 600;
+          font-size: 0.9rem;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .back-link:hover {
+          color: var(--primary-600);
+        }
+
+        .product-detail-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 3.5rem;
+          align-items: start;
+        }
+
+        .main-image-frame {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 1;
+          border-radius: var(--radius-xl);
+          overflow: hidden;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+        }
+
+        .main-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .out-badge {
+          position: absolute;
+          top: 1rem;
+          left: 1rem;
+          background: var(--error);
+          color: white;
+          padding: 0.4rem 0.85rem;
+          border-radius: var(--radius-full);
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .thumb-btn {
+          width: 70px;
+          height: 70px;
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          border: 2px solid var(--border-color);
+          background: var(--bg-secondary);
+          cursor: pointer;
+          padding: 0;
+        }
+
+        .thumb-btn.active {
+          border-color: var(--primary-600);
+        }
+
+        .thumb-btn img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .cat-badge {
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.75px;
+          color: var(--primary-600);
+          background: var(--primary-50);
+          padding: 0.3rem 0.75rem;
+          border-radius: var(--radius-full);
+        }
+
+        .wishlist-icon-btn {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+
+        .detail-title {
+          font-size: 2.2rem;
+          font-weight: 800;
+          color: var(--text-primary);
+          line-height: 1.2;
+          margin-bottom: 0.75rem;
+        }
+
+        .price-tag {
+          font-size: 2rem;
+          font-weight: 800;
+          color: var(--primary-600);
+        }
+
+        .stock-tag {
+          padding: 0.35rem 0.85rem;
+          border-radius: var(--radius-full);
+          font-size: 0.85rem;
+          font-weight: 700;
+        }
+
+        .stock-tag.in-stock {
+          background: #d1fae5;
+          color: #065f46;
+        }
+
+        .stock-tag.out-stock {
+          background: #fee2e2;
+          color: #991b1b;
+        }
+
+        .description-text {
+          color: var(--text-secondary);
+          font-size: 1.05rem;
+          line-height: 1.7;
+        }
+
+        .qty-picker {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          padding: 0.25rem 0.5rem;
+        }
+
+        .qty-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-color);
+          background: var(--bg-primary);
+          color: var(--text-primary);
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .qty-val {
+          font-weight: 700;
+          min-width: 30px;
+          text-align: center;
+        }
+
+        .full-cta {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+        }
+
+        .perk-box {
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          padding: 0.85rem;
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+        }
+
+        .perk-icon {
+          color: var(--primary-600);
+          font-size: 1.25rem;
+        }
+
+        .perk-title {
+          display: block;
+          font-weight: 700;
+          font-size: 0.8rem;
+          color: var(--text-primary);
+        }
+
+        .perk-sub {
+          display: block;
+          font-size: 0.7rem;
+          color: var(--text-tertiary);
+        }
+
+        .reviews-heading {
+          font-size: 1.6rem;
+          font-weight: 800;
+        }
+
+        .review-item-card {
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          padding: 1.25rem;
+        }
+
+        .user-avatar-circle {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: var(--primary-100);
+          color: var(--primary-700);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
         .loading-page {
           min-height: 400px;
           display: flex;
@@ -144,240 +458,17 @@ const ProductDetail = () => {
           justify-content: center;
         }
 
-        .product-detail-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 4rem;
-          margin-bottom: 4rem;
-        }
-
-        .product-images {
-          position: sticky;
-          top: calc(var(--header-height) + 2rem);
-          height: fit-content;
-        }
-
-        .main-image {
-          width: 100%;
-          aspect-ratio: 1;
-          border-radius: var(--radius-xl);
-          overflow: hidden;
-          background: var(--bg-secondary);
-          margin-bottom: 1rem;
-        }
-
-        .main-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .image-thumbnails {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-          gap: 0.75rem;
-        }
-
-        .thumbnail {
-          aspect-ratio: 1;
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          border: 2px solid var(--border-color);
-          background: var(--bg-secondary);
-          cursor: pointer;
-          transition: all var(--transition-fast);
-          padding: 0;
-        }
-
-        .thumbnail:hover,
-        .thumbnail.active {
-          border-color: var(--primary-500);
-        }
-
-        .thumbnail img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .product-info-section {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        .product-category-badge {
-          display: inline-block;
-          width: fit-content;
-          padding: 0.5rem 1rem;
-          background: var(--primary-100);
-          color: var(--primary-700);
-          border-radius: var(--radius-full);
-          font-size: 0.875rem;
-          font-weight: 600;
-          text-transform: uppercase;
-        }
-
-        .product-title {
-          font-size: 2.5rem;
-          font-weight: 800;
-          color: var(--text-primary);
-          margin: 0;
-        }
-
-        .product-price-section {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .product-price {
-          font-size: 2rem;
-          font-weight: 800;
-          background: var(--gradient-primary);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .stock-badge {
-          padding: 0.5rem 1rem;
-          border-radius: var(--radius-full);
-          font-size: 0.875rem;
-          font-weight: 600;
-        }
-
-        .stock-badge.in-stock {
-          background: #d1fae5;
-          color: #065f46;
-        }
-
-        .stock-badge.out-of-stock {
-          background: #fee2e2;
-          color: #991b1b;
-        }
-
-        .product-description {
-          color: var(--text-secondary);
-          line-height: 1.8;
-          font-size: 1.125rem;
-        }
-
-        .quantity-section {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .quantity-label {
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .quantity-controls {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 0.5rem;
-        }
-
-        .qty-btn {
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-sm);
-          color: var(--text-primary);
-          font-weight: 700;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-
-        .qty-btn:hover {
-          background: var(--primary-500);
-          color: white;
-          border-color: var(--primary-500);
-        }
-
-        .qty-value {
-          min-width: 40px;
-          text-align: center;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .reviews-section {
-          margin-top: 4rem;
-          padding-top: 4rem;
-          border-top: 1px solid var(--border-color);
-        }
-
-        .reviews-title {
-          font-size: 2rem;
-          font-weight: 800;
-          margin-bottom: 2rem;
-          color: var(--text-primary);
-        }
-
-        .reviews-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        .review-card {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-lg);
-          padding: 1.5rem;
-        }
-
-        .review-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.75rem;
-        }
-
-        .review-comment {
-          color: var(--text-secondary);
-          line-height: 1.6;
-        }
-
-        .no-reviews {
-          text-align: center;
-          color: var(--text-secondary);
-          padding: 2rem;
-        }
-
-        @media (max-width: 1024px) {
+        @media (max-width: 992px) {
           .product-detail-grid {
             grid-template-columns: 1fr;
             gap: 2rem;
           }
-
-          .product-images {
-            position: static;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .product-title {
-            font-size: 2rem;
-          }
-
-          .product-price {
-            font-size: 1.75rem;
+          .guarantee-cards-row {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
-        </div>
+        </motion.div>
     );
 };
 

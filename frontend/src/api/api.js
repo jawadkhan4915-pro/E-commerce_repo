@@ -35,10 +35,14 @@ api.interceptors.response.use(
             error.message ||
             'Something went wrong';
 
+        // Show toast error message
         toast.error(message);
 
-        // Logout user if token is invalid
-        if (error.response?.status === 401) {
+        // Logout user if token is invalid, but only for non-auth requests and when not already on auth pages
+        const isAuthRequest = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register');
+        const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+
+        if (error.response?.status === 401 && !isAuthRequest && !isAuthPage) {
             localStorage.removeItem('userInfo');
             window.location.href = '/login';
         }
