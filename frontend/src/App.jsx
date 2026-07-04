@@ -19,13 +19,15 @@ import UserDashboard from './pages/User/Dashboard';
 import UserOrders from './pages/User/Orders';
 import AddressBook from './pages/User/AddressBook';
 import Wishlist from './pages/User/Wishlist';
+import UserSecurity from './pages/User/Security';
 
 // Admin Pages
 import Dashboard from './pages/Admin/Dashboard';
 import ProductForm from './pages/Admin/ProductForm';
-import ProductListAdmin from './pages/Admin/ProductList'; // Renamed to avoid verification errors if names clash
+import ProductListAdmin from './pages/Admin/ProductList';
 import OrderList from './pages/Admin/OrderList';
 import UserList from './pages/Admin/UserList';
+import AdminSettings from './pages/Admin/Settings';
 
 
 function App() {
@@ -65,6 +67,7 @@ function App() {
                     <Route path="products/:id/edit" element={<ProductForm />} />
                     <Route path="users" element={<UserList />} />
                     <Route path="orders" element={<OrderList />} />
+                    <Route path="settings" element={<AdminSettings />} />
                     {/* Add fallback for /admin root to redirect to dashboard if needed, or just let it render what matches */}
                     <Route index element={<Dashboard />} />
                 </Route>
@@ -105,6 +108,7 @@ function App() {
                                         <Route path="orders" element={<UserOrders />} />
                                         <Route path="address" element={<AddressBook />} />
                                         <Route path="wishlist" element={<Wishlist />} />
+                                        <Route path="security" element={<UserSecurity />} />
                                     </Route>
                                 </Routes>
                             </main>

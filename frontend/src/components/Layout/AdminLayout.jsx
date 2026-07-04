@@ -25,7 +25,7 @@ const AdminLayout = () => {
         { path: '/admin/products', name: 'Products', icon: <FaBox /> },
         { path: '/admin/orders', name: 'Orders', icon: <FaShoppingBag /> },
         { path: '/admin/users', name: 'Users', icon: <FaUsers /> },
-        // { path: '/admin/settings', name: 'Settings', icon: <FaCog /> },
+        { path: '/admin/settings', name: 'Settings', icon: <FaCog /> },
     ];
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);

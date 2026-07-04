@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaUser, FaMapMarkerAlt, FaHeart, FaShoppingBag, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaMapMarkerAlt, FaHeart, FaShoppingBag, FaSignOutAlt, FaShieldAlt } from 'react-icons/fa';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ const UserLayout = () => {
         { path: '/profile/orders', name: 'Orders', icon: <FaShoppingBag /> },
         { path: '/profile/address', name: 'Addresses', icon: <FaMapMarkerAlt /> },
         { path: '/profile/wishlist', name: 'Wishlist', icon: <FaHeart /> },
+        { path: '/profile/security', name: 'Security', icon: <FaShieldAlt /> },
     ];
 
     const handleLogout = () => {
