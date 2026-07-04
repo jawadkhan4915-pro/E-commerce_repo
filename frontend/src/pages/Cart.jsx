@@ -74,6 +74,42 @@ const Cart = () => {
         );
     }
 
+    const [couponCode, setCouponCode] = React.useState('');
+    const [activeDiscount, setActiveDiscount] = React.useState(() => {
+        const saved = localStorage.getItem('activeCoupon');
+        return saved ? JSON.parse(saved) : null;
+    });
+
+    const handleApplyCoupon = (e) => {
+        e.preventDefault();
+        const code = couponCode.trim().toUpperCase();
+        if (code === 'SHOP20') {
+            const promo = { code: 'SHOP20', percent: 20 };
+            setActiveDiscount(promo);
+            localStorage.setItem('activeCoupon', JSON.stringify(promo));
+            toast.success('🎉 Coupon SHOP20 applied! 20% discount granted.');
+            setCouponCode('');
+        } else if (code === 'WELCOME10') {
+            const promo = { code: 'WELCOME10', percent: 10 };
+            setActiveDiscount(promo);
+            localStorage.setItem('activeCoupon', JSON.stringify(promo));
+            toast.success('🎉 Coupon WELCOME10 applied! 10% discount granted.');
+            setCouponCode('');
+        } else {
+            toast.error('Invalid coupon code. Try SHOP20 or WELCOME10');
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setActiveDiscount(null);
+        localStorage.removeItem('activeCoupon');
+        toast('Coupon code removed');
+    };
+
+    const discountAmount = activeDiscount ? (totalPrice * activeDiscount.percent) / 100 : 0;
+    const taxAmount = (totalPrice - discountAmount) * 0.1;
+    const finalTotal = totalPrice - discountAmount + taxAmount;
+
     return (
         <div className="cart-page py-8">
             <div className="container">
@@ -128,20 +164,54 @@ const Cart = () => {
                             <span>Subtotal</span>
                             <span>{formatPrice(totalPrice)}</span>
                         </div>
+
+                        {activeDiscount && (
+                            <div className="summary-row text-emerald-600 font-semibold flex justify-between items-center">
+                                <span className="flex items-center gap-1">
+                                    Coupon ({activeDiscount.code})
+                                    <button 
+                                        type="button" 
+                                        onClick={handleRemoveCoupon}
+                                        className="text-xs text-red-500 hover:underline ml-1"
+                                    >
+                                        Remove
+                                    </button>
+                                </span>
+                                <span>-{formatPrice(discountAmount)}</span>
+                            </div>
+                        )}
+
                         <div className="summary-row">
                             <span>Shipping</span>
                             <span>Free</span>
                         </div>
                         <div className="summary-row">
-                            <span>Tax</span>
-                            <span>{formatPrice(totalPrice * 0.1)}</span>
+                            <span>Tax (10%)</span>
+                            <span>{formatPrice(taxAmount)}</span>
+                        </div>
+
+                        {/* Promo Code Form */}
+                        <div className="mt-4 mb-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">Have a promo code?</label>
+                            <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="e.g. SHOP20"
+                                    value={couponCode}
+                                    onChange={(e) => setCouponCode(e.target.value)}
+                                    className="form-input text-xs uppercase p-2 border rounded-xl"
+                                />
+                                <button type="submit" className="btn btn-secondary btn-sm text-xs px-3">
+                                    Apply
+                                </button>
+                            </form>
                         </div>
 
                         <div className="summary-divider"></div>
 
                         <div className="summary-row summary-total">
                             <span>Total</span>
-                            <span>{formatPrice(totalPrice * 1.1)}</span>
+                            <span>{formatPrice(finalTotal)}</span>
                         </div>
 
                         <Link to="/checkout" className="btn btn-primary btn-lg" style={{ width: '100%' }}>

@@ -215,3 +215,192 @@
 .admin-table tr:hover {
     background: var(--bg-secondary);
 }
+
+/* === QUICK EDIT INLINE CONTROLS === */
+.quick-edit-input {
+    width: 90px;
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+.quick-edit-input:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.quick-edit-actions {
+    display: inline-flex;
+    gap: 0.35rem;
+    margin-left: 0.5rem;
+    align-items: center;
+}
+
+.quick-edit-save-btn,
+.quick-edit-cancel-btn {
+    border: none;
+    background: none;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast);
+}
+
+.quick-edit-save-btn {
+    color: var(--success);
+}
+.quick-edit-save-btn:hover {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.quick-edit-cancel-btn {
+    color: var(--error);
+}
+.quick-edit-cancel-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* === NOTIFICATIONS HUB === */
+.admin-notifications-wrapper {
+    position: relative;
+}
+
+.admin-notifications-btn {
+    position: relative;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.admin-notifications-btn:hover {
+    color: var(--primary-600);
+    border-color: var(--primary-500);
+    background: var(--bg-primary);
+}
+
+.notification-badge-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background: var(--error);
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary);
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    width: 320px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    z-index: 120;
+    padding: 0.5rem 0;
+}
+
+.notifications-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notifications-dropdown-header h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.clear-notifications-btn {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    color: var(--primary-600);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.clear-notifications-btn:hover {
+    text-decoration: underline;
+}
+
+.notifications-list {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--transition-fast);
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background: var(--bg-secondary);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.unread {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.notification-item-icon {
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+}
+
+.notification-item-content {
+    flex: 1;
+}
+
+.notification-item-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.15rem;
+}
+
+.notification-item-time {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+}
+
+.notifications-empty-state {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+}

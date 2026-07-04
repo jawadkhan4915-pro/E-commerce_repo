@@ -43,6 +43,8 @@ const Dashboard = () => {
     { time: '3 hours ago', title: 'New product rating received (5 Stars ⭐)', type: 'review' }
   ];
 
+  const [timeframe, setTimeframe] = useState(7);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -55,7 +57,7 @@ const Dashboard = () => {
           },
         };
 
-        const { data } = await axios.get('/api/analytics/dashboard', config);
+        const { data } = await axios.get(`/api/analytics/dashboard?days=${timeframe}`, config);
         setStats(data);
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -65,7 +67,7 @@ const Dashboard = () => {
     };
 
     fetchStats();
-  }, []);
+  }, [timeframe]);
 
   if (loading) {
     return (
@@ -163,9 +165,35 @@ const Dashboard = () => {
         >
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold">Sales & Revenue Trend</h3>
-            <span className="text-xs px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-semibold">
-              Live Data
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg border border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setTimeframe(7)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                    timeframe === 7
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  7 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeframe(30)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                    timeframe === 30
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  30 Days
+                </button>
+              </div>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-semibold">
+                Live Data
+              </span>
+            </div>
           </div>
 
           <div style={{ width: '100%', height: 320 }}>

@@ -39,6 +39,25 @@ const Header = ({ darkMode, toggleDarkMode }) => {
     const searchRef = useRef(null);
     const userMenuRef = useRef(null);
 
+    const [recentSearches, setRecentSearches] = useState(() => {
+        const saved = localStorage.getItem('recentSearches');
+        return saved ? JSON.parse(saved) : ['Headphones', 'Smart TV', 'Shoes'];
+    });
+
+    // Save search to history
+    const saveSearchTerm = (term) => {
+        if (!term.trim()) return;
+        const updated = [term.trim(), ...recentSearches.filter(s => s.toLowerCase() !== term.trim().toLowerCase())].slice(0, 5);
+        setRecentSearches(updated);
+        localStorage.setItem('recentSearches', JSON.stringify(updated));
+    };
+
+    const clearRecentSearches = (e) => {
+        e.stopPropagation();
+        setRecentSearches([]);
+        localStorage.removeItem('recentSearches');
+    };
+
     // Scroll listener for glassmorphism elevation
     useEffect(() => {
         const handleScroll = () => {
@@ -70,7 +89,6 @@ const Header = ({ darkMode, toggleDarkMode }) => {
     useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
-            setShowSuggestions(false);
             return;
         }
 
@@ -93,9 +111,17 @@ const Header = ({ darkMode, toggleDarkMode }) => {
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
+            saveSearchTerm(searchQuery);
             navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
             setShowSuggestions(false);
         }
+    };
+
+    const handleSelectSearchTerm = (term) => {
+        setSearchQuery(term);
+        saveSearchTerm(term);
+        navigate(`/products?search=${encodeURIComponent(term)}`);
+        setShowSuggestions(false);
     };
 
     const handleSelectProduct = (productId) => {
@@ -145,7 +171,7 @@ const Header = ({ darkMode, toggleDarkMode }) => {
                                 placeholder="Search products, brands, categories..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                                onFocus={() => setShowSuggestions(true)}
                                 className="search-input"
                             />
                             {searchQuery && (
@@ -169,9 +195,59 @@ const Header = ({ darkMode, toggleDarkMode }) => {
                                     exit={{ opacity: 0, y: 10 }}
                                     transition={{ duration: 0.15 }}
                                 >
-                                    {isSearching ? (
-                                        <div className="suggestions-loading">
-                                            <div className="btn-spinner"></div> Searching...
+                                    {!searchQuery.trim() ? (
+                                        <div className="suggestions-history-panel p-2">
+                                            {recentSearches.length > 0 && (
+                                                <div className="mb-3">
+                                                    <div className="flex justify-between items-center px-2 py-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                                        <span>Recent Searches</span>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={clearRecentSearches}
+                                                            className="text-xs text-indigo-400 hover:underline capitalize font-normal"
+                                                        >
+                                                            Clear All
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                                        {recentSearches.map((term, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                type="button"
+                                                                onClick={() => handleSelectSearchTerm(term)}
+                                                                className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-indigo-500 hover:text-white transition-all flex items-center gap-1.5"
+                                                            >
+                                                                <FiSearch size={11} /> {term}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div>
+                                                <div className="px-2 py-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                                    Popular Categories
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-1.5 mt-1">
+                                                    {['Electronics', 'Clothing', 'Accessories', 'Shoes'].map((cat) => (
+                                                        <button
+                                                            key={cat}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setShowSuggestions(false);
+                                                                navigate(`/products?category=${cat}`);
+                                                            }}
+                                                            className="text-left px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between"
+                                                        >
+                                                            <span>{cat}</span>
+                                                            <FiChevronRight size={12} className="text-gray-400" />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : isSearching ? (
+                                        <div className="suggestions-loading p-4 text-center text-sm text-gray-500">
+                                            <div className="btn-spinner inline-block mr-2"></div> Searching...
                                         </div>
                                     ) : searchResults.length > 0 ? (
                                         <div className="suggestions-list">
@@ -203,7 +279,7 @@ const Header = ({ darkMode, toggleDarkMode }) => {
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="suggestions-empty">
+                                        <div className="suggestions-empty p-4 text-center text-sm text-gray-500">
                                             No products found for "{searchQuery}"
                                         </div>
                                     )}

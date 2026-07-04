@@ -99,6 +99,12 @@ const Orders = () => {
 
     const steps = ['Placed', 'Processing', 'Shipped', 'Delivered'];
 
+    const [expandedOrder, setExpandedOrder] = useState(null);
+
+    const toggleTrackOrder = (orderId) => {
+        setExpandedOrder(expandedOrder === orderId ? null : orderId);
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -115,6 +121,7 @@ const Orders = () => {
             <div className="space-y-6">
                 {orders.map((order, index) => {
                     const currentStep = getStatusStepIndex(order.orderStatus);
+                    const isExpanded = expandedOrder === order._id;
 
                     return (
                         <motion.div
@@ -150,8 +157,16 @@ const Orders = () => {
                                 </div>
 
                                 {/* Order Stepper Progress Line */}
-                                <div className="mb-6 px-2 py-4 bg-black/30 rounded-xl border border-white/5">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-2">Delivery Progress Stepper</p>
+                                <div className="mb-6 px-4 py-4 bg-black/30 rounded-xl border border-white/5">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Delivery Progress Stepper</p>
+                                        <button
+                                            onClick={() => toggleTrackOrder(order._id)}
+                                            className="text-xs text-purple-400 font-semibold hover:underline flex items-center gap-1"
+                                        >
+                                            {isExpanded ? 'Hide Milestone Log' : 'Track Milestone Log ↓'}
+                                        </button>
+                                    </div>
                                     <div className="flex items-center justify-between relative px-4">
                                         <div className="absolute left-8 right-8 top-1/2 h-0.5 bg-gray-700 -translate-y-1/2 -z-0"></div>
                                         <div 
@@ -177,6 +192,41 @@ const Orders = () => {
                                             );
                                         })}
                                     </div>
+
+                                    {/* Expanded Tracking Timeline Drawer */}
+                                    {isExpanded && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="mt-4 pt-4 border-t border-white/10 text-xs space-y-2"
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1"></div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-200">Order Processing & Verification Complete</p>
+                                                    <p className="text-gray-500">{formatDate(order.createdAt)} • Warehouse Operations</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className={`w-2 h-2 rounded-full ${currentStep >= 2 ? 'bg-emerald-400' : 'bg-gray-600'} mt-1`}></div>
+                                                <div>
+                                                    <p className={`font-semibold ${currentStep >= 2 ? 'text-gray-200' : 'text-gray-500'}`}>
+                                                        Package Handed to Logistics Carrier
+                                                    </p>
+                                                    <p className="text-gray-500">FedEx Express Air • Tracking Ref #FX-{order._id.slice(-6).toUpperCase()}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className={`w-2 h-2 rounded-full ${currentStep >= 3 ? 'bg-emerald-400' : 'bg-gray-600'} mt-1`}></div>
+                                                <div>
+                                                    <p className={`font-semibold ${currentStep >= 3 ? 'text-gray-200' : 'text-gray-500'}`}>
+                                                        {currentStep >= 3 ? 'Package Delivered to Destination' : 'Estimated Delivery In Progress'}
+                                                    </p>
+                                                    <p className="text-gray-500">Destination Address: {order.shippingAddress?.address || 'Primary Customer Address'}, {order.shippingAddress?.city || 'City'}</p>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4">

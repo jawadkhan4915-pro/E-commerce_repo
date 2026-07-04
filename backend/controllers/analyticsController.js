@@ -24,6 +24,8 @@ export const getDashboardStats = async (req, res) => {
         // But let's stick to a simpler JS approach if dataset is small, or use aggregation if needed.
         // Let's use aggregation for better performance.
 
+        const days = parseInt(req.query.days) || 7;
+
         const salesData = await Order.aggregate([
             {
                 $match: { paymentStatus: 'Paid' } // Only paid orders
@@ -36,7 +38,7 @@ export const getDashboardStats = async (req, res) => {
                 }
             },
             { $sort: { _id: 1 } },
-            { $limit: 7 } // Last 7 days that have sales
+            { $limit: days }
         ]);
 
         res.json({

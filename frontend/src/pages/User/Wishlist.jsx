@@ -6,7 +6,11 @@ import { FaHeart, FaTrash, FaShoppingCart } from 'react-icons/fa';
 import { formatPrice } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../../store/slices/cartSlice';
+
 const Wishlist = () => {
+    const dispatch = useDispatch();
     const [wishlist, setWishlist] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -27,13 +31,18 @@ const Wishlist = () => {
 
     const removeFromWishlist = async (productId) => {
         try {
-            const { data } = await api.post('/users/wishlist', { productId });
+            await api.post('/users/wishlist', { productId });
             setWishlist(wishlist.filter(p => p._id !== productId));
             toast.success('Removed from wishlist');
         } catch (error) {
             console.error(error);
             toast.error('Failed to remove item');
         }
+    };
+
+    const handleAddToCart = (product) => {
+        dispatch(addToCart(product));
+        toast.success(`Added ${product.name} to cart! 🛒`);
     };
 
     if (loading) {
@@ -79,40 +88,48 @@ const Wishlist = () => {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                            className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden group hover:border-purple-500/50 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl"
+                            className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden group hover:border-purple-500/50 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl flex flex-col justify-between"
                         >
-                            <div className="relative h-64 overflow-hidden">
-                                <img
-                                    src={product.images?.[0]?.url || 'https://via.placeholder.com/300'}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-                                    <Link
-                                        to={`/products/${product._id}`}
-                                        className="bg-white text-gray-900 px-6 py-2 rounded-full font-bold transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
+                            <div>
+                                <div className="relative h-56 overflow-hidden">
+                                    <img
+                                        src={typeof product.images?.[0] === 'string' ? product.images[0] : (product.images?.[0]?.url || 'https://via.placeholder.com/300')}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6 gap-2">
+                                        <Link
+                                            to={`/products/${product._id}`}
+                                            className="bg-white text-gray-900 px-4 py-2 rounded-full font-bold text-xs transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
+                                        >
+                                            View Details
+                                        </Link>
+                                    </div>
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); removeFromWishlist(product._id); }}
+                                        className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white p-2.5 rounded-full hover:bg-red-500 transition-colors duration-300"
+                                        title="Remove from Wishlist"
                                     >
-                                        View Details
-                                    </Link>
+                                        <FaTrash size={14} />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={(e) => { e.preventDefault(); removeFromWishlist(product._id); }}
-                                    className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white p-2.5 rounded-full hover:bg-red-500 transition-colors duration-300"
-                                    title="Remove from Wishlist"
-                                >
-                                    <FaTrash size={14} />
-                                </button>
-                            </div>
 
-                            <div className="p-5">
-                                <Link to={`/products/${product._id}`}>
-                                    <h3 className="text-white font-semibold text-lg mb-2 hover:text-purple-400 truncate transition-colors">{product.name}</h3>
-                                </Link>
-                                <div className="flex items-center justify-between mt-4">
-                                    <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-                                        {formatPrice(product.price)}
-                                    </span>
-                                    {/* Optional: Add to cart button if available */}
+                                <div className="p-5">
+                                    <Link to={`/products/${product._id}`}>
+                                        <h3 className="text-white font-semibold text-lg mb-2 hover:text-purple-400 truncate transition-colors">{product.name}</h3>
+                                    </Link>
+                                    <div className="flex items-center justify-between mt-4">
+                                        <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                                            {formatPrice(product.price)}
+                                        </span>
+                                        <button
+                                            onClick={() => handleAddToCart(product)}
+                                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg hover:shadow-purple-500/40 transition-all transform hover:-translate-y-0.5"
+                                        >
+                                            <FaShoppingCart size={13} />
+                                            <span>Add to Cart</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>

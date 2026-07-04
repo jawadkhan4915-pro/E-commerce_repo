@@ -42,11 +42,15 @@ export const createOrder = async (req, res) => {
             await product.save();
         }
 
+        const isPaid = req.body.paymentStatus === 'Paid';
+
         const order = await Order.create({
             user: req.user._id,
             products,
             shippingAddress,
-            paymentMethod,
+            paymentMethod: paymentMethod || 'Cash on Delivery',
+            paymentStatus: isPaid ? 'Paid' : (req.body.paymentStatus || 'Pending'),
+            paidAt: isPaid ? Date.now() : null,
             totalPrice,
             shippingPrice,
             taxPrice,
