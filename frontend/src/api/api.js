@@ -2,8 +2,10 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // Create axios instance
+// In production (Vercel), VITE_API_URL points to the Render backend.
+// In development, falls back to '/api' which is handled by the Vite dev proxy.
 const api = axios.create({
-    baseURL: '/api',
+    baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
     headers: {
         'Content-Type': 'application/json',
     },
