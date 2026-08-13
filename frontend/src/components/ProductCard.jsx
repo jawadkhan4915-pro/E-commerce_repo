@@ -51,7 +51,7 @@ const ProductCard = ({ product }) => {
                 <Link to={`/products/${product._id}`} className="product-card">
                     <div className="product-image-wrapper">
                         <img
-                            src={product.images?.[0] || 'https://via.placeholder.com/300'}
+                            src={product.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80'}
                             alt={product.name}
                             className="product-image"
                             loading="lazy"
