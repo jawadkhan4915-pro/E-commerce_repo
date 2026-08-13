@@ -9,6 +9,7 @@ import {
 } from '../controllers/productController.js';
 import { protect } from '../middleware/auth.js';
 import { admin } from '../middleware/admin.js';
+import { validateProduct, validateReview } from '../middleware/validators.js';
 
 const router = express.Router();
 
@@ -17,11 +18,12 @@ router.get('/', getAllProducts);
 router.get('/:id', getProductById);
 
 // Protected routes
-router.post('/:id/reviews', protect, createProductReview);
+router.post('/:id/reviews', protect, validateReview, createProductReview);
 
 // Admin routes
-router.post('/', protect, admin, createProduct);
-router.put('/:id', protect, admin, updateProduct);
+router.post('/', protect, admin, validateProduct, createProduct);
+router.put('/:id', protect, admin, validateProduct, updateProduct);
 router.delete('/:id', protect, admin, deleteProduct);
 
 export default router;
+

@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import { escapeRegex } from '../middleware/security.js';
 
 /**
  * @desc    Get all products with pagination, search, and filters
@@ -14,9 +15,9 @@ export const getAllProducts = async (req, res) => {
         // Build query
         const query = {};
 
-        // Search by name
+        // Search by name (safely escaped to prevent ReDoS)
         if (req.query.search) {
-            query.name = { $regex: req.query.search, $options: 'i' };
+            query.name = { $regex: escapeRegex(req.query.search), $options: 'i' };
         }
 
         // Filter by category
