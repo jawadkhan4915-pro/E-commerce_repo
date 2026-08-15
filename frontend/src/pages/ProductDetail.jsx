@@ -11,7 +11,8 @@ import {
     FiCheck, 
     FiStar, 
     FiArrowLeft,
-    FiUser
+    FiUser,
+    FiCamera
 } from 'react-icons/fi';
 import { addToCart } from '../store/slices/cartSlice';
 import Rating from '../components/Rating';
@@ -218,6 +219,21 @@ const ProductDetail = () => {
                             >
                                 <FiShoppingCart size={20} />
                                 {product.stock > 0 ? `Add ${quantity} to Shopping Cart` : 'Currently Out of Stock'}
+                            </motion.button>
+
+                            {/* Virtual Try-On CTA */}
+                            <motion.button
+                                className="btn detail-tryon-btn"
+                                onClick={() =>
+                                    window.dispatchEvent(
+                                        new CustomEvent('open-tryon', { detail: { product } })
+                                    )
+                                }
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <FiCamera size={18} />
+                                Try It On Virtually ✨
                             </motion.button>
                         </div>
 

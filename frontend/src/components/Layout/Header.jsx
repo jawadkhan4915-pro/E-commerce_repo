@@ -14,7 +14,8 @@ import {
     FiGrid, 
     FiHeart, 
     FiChevronRight,
-    FiAward
+    FiAward,
+    FiCamera
 } from 'react-icons/fi';
 import { logout } from '../../store/slices/authSlice';
 import api from '../../api/api';
@@ -135,6 +136,11 @@ const Header = ({ darkMode, toggleDarkMode }) => {
         toast.success('Logged out successfully');
         navigate('/');
         setShowUserMenu(false);
+    };
+
+    const openTryOn = () => {
+        window.dispatchEvent(new CustomEvent('open-tryon', { detail: { product: null } }));
+        setMobileMenuOpen(false);
     };
 
     return (
@@ -297,6 +303,17 @@ const Header = ({ darkMode, toggleDarkMode }) => {
                             <FiGrid /> Catalog
                         </Link>
 
+                        {/* Virtual Try-On Button */}
+                        <motion.button
+                            onClick={openTryOn}
+                            className="tryon-nav-trigger"
+                            title="Virtual Try-On"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <FiCamera size={15} />
+                            <span>Try It On</span>
+                        </motion.button>
                         {/* Dark Mode Switcher */}
                         <motion.button
                             onClick={toggleDarkMode}
@@ -431,6 +448,9 @@ const Header = ({ darkMode, toggleDarkMode }) => {
                                 <Link to="/products" className="mobile-link" onClick={() => setMobileMenuOpen(false)}>
                                     <FiGrid /> Catalog
                                 </Link>
+                                <button className="mobile-link tryon-mobile-link" onClick={openTryOn}>
+                                    <FiCamera /> Try It On 👗
+                                </button>
                                 <Link to="/cart" className="mobile-link" onClick={() => setMobileMenuOpen(false)}>
                                     <FiShoppingBag /> Cart ({totalItems})
                                 </Link>
@@ -827,6 +847,35 @@ const Header = ({ darkMode, toggleDarkMode }) => {
           width: 100%;
           text-align: left;
           cursor: pointer;
+        }
+
+        /* ── Virtual Try-On trigger button ── */
+        .tryon-nav-trigger {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.45rem 1rem;
+          background: linear-gradient(135deg, #6366f1, #ec4899);
+          color: white;
+          border: none;
+          border-radius: 999px;
+          font-size: 0.82rem;
+          font-weight: 700;
+          cursor: pointer;
+          letter-spacing: 0.2px;
+          box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+          transition: box-shadow 0.2s;
+          white-space: nowrap;
+        }
+        .tryon-nav-trigger:hover {
+          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .tryon-mobile-link {
+          background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(236,72,153,0.12));
+          color: #6366f1 !important;
+          border: 1px solid rgba(99,102,241,0.25) !important;
+          font-weight: 700 !important;
         }
 
         @media (max-width: 768px) {

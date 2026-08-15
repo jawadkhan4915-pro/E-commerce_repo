@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FiEye, FiHeart, FiShoppingCart } from 'react-icons/fi';
+import { FiEye, FiHeart, FiShoppingCart, FiCamera } from 'react-icons/fi';
 import { addToCart } from '../store/slices/cartSlice';
 import Rating from './Rating';
 import QuickViewModal from './QuickViewModal';
@@ -40,6 +40,12 @@ const ProductCard = ({ product }) => {
         } else {
             toast('Removed from wishlist');
         }
+    };
+
+    const handleTryOn = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.dispatchEvent(new CustomEvent('open-tryon', { detail: { product } }));
     };
 
     return (
@@ -86,6 +92,16 @@ const ProductCard = ({ product }) => {
                                 whileTap={{ scale: 0.95 }}
                             >
                                 <FiEye size={16} /> Quick View
+                            </motion.button>
+                            <motion.button
+                                type="button"
+                                onClick={handleTryOn}
+                                className="card-tryon-btn"
+                                title="Virtual Try-On"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <FiCamera size={15} /> Try On
                             </motion.button>
                         </div>
                     </div>
@@ -236,7 +252,9 @@ const ProductCard = ({ product }) => {
           left: 0;
           right: 0;
           display: flex;
-          justify-content: center;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.4rem;
           opacity: 0;
           transform: translateY(10px);
           transition: all var(--transition-base);
@@ -269,6 +287,26 @@ const ProductCard = ({ product }) => {
           color: white;
           border-color: var(--primary-600);
         }
+
+        .card-tryon-btn {
+          background: linear-gradient(135deg, #6366f1, #ec4899);
+          color: white;
+          border: none;
+          padding: 0.45rem 0.9rem;
+          border-radius: var(--radius-full);
+          font-size: 0.78rem;
+          font-weight: 700;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+        }
+
+        .card-tryon-btn:hover {
+          box-shadow: 0 6px 18px rgba(99,102,241,0.55);
+        }
+
 
         .product-info {
           padding: 1.25rem;

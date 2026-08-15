@@ -3,9 +3,10 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
-import AdminLayout from './components/Layout/AdminLayout'; // Import AdminLayout
+import AdminLayout from './components/Layout/AdminLayout';
+import VirtualTryOnModal from './components/VirtualTryOnModal';
 
-// Pages
+// Public Core Pages
 import Home from './pages/Home';
 import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
@@ -13,7 +14,17 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import Register from './pages/Register';
-// import Profile from './pages/Profile'; // Replaced by User Dashboard
+
+// Informational & Support Pages
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Shipping from './pages/Shipping';
+import Returns from './pages/Returns';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import NotFound from './pages/NotFound';
+
+// User Dashboard Pages
 import UserLayout from './components/Layout/UserLayout';
 import UserDashboard from './pages/User/Dashboard';
 import UserOrders from './pages/User/Orders';
@@ -29,12 +40,15 @@ import OrderList from './pages/Admin/OrderList';
 import UserList from './pages/Admin/UserList';
 import AdminSettings from './pages/Admin/Settings';
 
-
 function App() {
     const [darkMode, setDarkMode] = useState(() => {
         const saved = localStorage.getItem('darkMode');
         return saved ? JSON.parse(saved) : false;
     });
+
+    // Virtual Try-On global state
+    const [tryOnOpen, setTryOnOpen] = useState(false);
+    const [tryOnProduct, setTryOnProduct] = useState(null);
 
     useEffect(() => {
         if (darkMode) {
@@ -44,6 +58,16 @@ function App() {
         }
         localStorage.setItem('darkMode', JSON.stringify(darkMode));
     }, [darkMode]);
+
+    // Listen for custom events from any component
+    useEffect(() => {
+        const handler = (e) => {
+            setTryOnProduct(e.detail?.product || null);
+            setTryOnOpen(true);
+        };
+        window.addEventListener('open-tryon', handler);
+        return () => window.removeEventListener('open-tryon', handler);
+    }, []);
 
     const toggleDarkMode = () => {
         setDarkMode(!darkMode);
@@ -68,7 +92,6 @@ function App() {
                     <Route path="users" element={<UserList />} />
                     <Route path="orders" element={<OrderList />} />
                     <Route path="settings" element={<AdminSettings />} />
-                    {/* Add fallback for /admin root to redirect to dashboard if needed, or just let it render what matches */}
                     <Route index element={<Dashboard />} />
                 </Route>
 
@@ -86,6 +109,14 @@ function App() {
                                     <Route path="/cart" element={<Cart />} />
                                     <Route path="/login" element={<Login />} />
                                     <Route path="/register" element={<Register />} />
+
+                                    {/* Company & Support Pages */}
+                                    <Route path="/about" element={<About />} />
+                                    <Route path="/contact" element={<Contact />} />
+                                    <Route path="/shipping" element={<Shipping />} />
+                                    <Route path="/returns" element={<Returns />} />
+                                    <Route path="/privacy" element={<Privacy />} />
+                                    <Route path="/terms" element={<Terms />} />
 
                                     {/* Protected Customer Routes */}
                                     <Route
@@ -110,6 +141,9 @@ function App() {
                                         <Route path="wishlist" element={<Wishlist />} />
                                         <Route path="security" element={<UserSecurity />} />
                                     </Route>
+
+                                    {/* 404 Fallback Route */}
+                                    <Route path="*" element={<NotFound />} />
                                 </Routes>
                             </main>
                             <Footer />
@@ -117,6 +151,13 @@ function App() {
                     }
                 />
             </Routes>
+
+            {/* Global Virtual Try-On Modal */}
+            <VirtualTryOnModal
+                isOpen={tryOnOpen}
+                onClose={() => { setTryOnOpen(false); setTryOnProduct(null); }}
+                preSelectedProduct={tryOnProduct}
+            />
 
             <style>{`
         .app {
