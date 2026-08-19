@@ -897,6 +897,8 @@ const VirtualTryOnModal = ({ isOpen, onClose, preSelectedProduct = null }) => {
         reader.onload = (e) => {
             setUserPhoto(e.target.result);
             stopWebcam();
+        };
+        reader.readAsDataURL(file);
     };
 
     /* ─── Gemini AI Generation Logic ────────────────────────────────── */
